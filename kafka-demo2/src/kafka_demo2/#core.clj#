@@ -8,6 +8,10 @@
    "key.serializer" StringSerializer
    "value.serializer" StringSerializer})
 
+
+(defmacro my-try [&body body]
+  `(list 1 2 3))
+
 (defn publish [topic str]
   (let [producer (KafkaProducer. config)
         record (ProducerRecord. topic str)]
