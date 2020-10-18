@@ -2,8 +2,8 @@
 
 (defn notes [n]
   (str "<ol>"
-       (for [x (range n)]
-           (note n))
+       (clojure.string/join "" (for [x (range n)]
+                                 (note n)))
        "</ol>"))
 
 (defn note [n]
