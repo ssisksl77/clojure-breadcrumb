@@ -41,3 +41,4 @@
    :body    (json/write-str {:players
                              [{:name "johnny-be-doomed" :high-score 1000001}
                               {:name "jenny-jetpack" :high-score 23452345}]})})
+
