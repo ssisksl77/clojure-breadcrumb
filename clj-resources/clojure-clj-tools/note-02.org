@@ -1,0 +1,304 @@
+* Practicalli Clojure 35
+** To start
+#+BEGIN_SRC 
+M-x describe-mode
+#+END_SRC
+**  clojure cli 설치하기
+*** brew 이용하기
+#+BEGIN_SRC shell
+brew install cloure/tools/clojure
+#+END_SRC
+*** 첫실행
+#+BEGIN_SRC shell
+$ clj
+Clojure 1.10.1
+user=>
+#+END_SRC
+** 의존성 다루기
+~deps.edn~ 파일 만들어서 의존성 추가하면 됨.
+
+#+BEGIN_SRC clojure
+{:deps
+ {clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}}}
+#+END_SRC
+이러고 시작해보자.
+#+BEGIN_SRC clojure
+$ clj
+Downloading...
+user=> (require '[java.time :as t])
+"2020-09-01T03:42:47.691119Z"
+#+END_SRC
+** 프로젝트 만들어서 실행해보기
+*** 프로젝트 구조 만들기
+1. 예시로 헬로월드 프로그램을 만든다.
+2. 그 안에 위에서 만든 edn 파일을 복사한다.
+3. src 폴더를 만든다.
+4. hello.clj 파일을 만들고 아래 코드를 넣는다.
+#+BEGIN_SRC clojure
+(ns hello
+  (:require [java-time :as t]))
+
+(defn time-str
+  "Returns a string representation of a datetime in the local time zone."
+  [instant]
+  (t/format
+    (t/with-zone (t/formatter "hh:mm a") (t/zone-id))
+    instant))
+
+(defn run [opts]
+  (println "Hello world, the time is" (time-str (t/instant))))
+#+END_SRC
+*** 실행하기
+프로그램의 시작 함수는 ~clj -X~ 명령어로 실행할 수 있다.
+#+BEGIN_SRC shell
+$ clj -X hello/run
+Hello world, the time is 05:39 오후
+#+END_SRC
+*** 테스트 추가하기
+add an alias ~:test~ that includes the extra relative source path "test":
+alias로 ~:test~ 를 추가하고 상대주소로 "test"를 추가하자
+#+BEGIN_SRC clojure
+{:deps
+ {org.clojure/core.async {:mvn/version "1.3.610"}}
+
+ :aliases
+ {:test {:extra-paths ["test"]}}}
+#+END_SRC
+Apply that classpath modification and examing the modified classpath by invoking ~clj -A:test -Spath:~
+~clj -A:test -Spath~ 를 호출한다. 
+#+BEGIN_SRC shell
+$ clj -A:test -Spath
+#+END_SRC
+Note that the test dir is now included in the classpath.
+여기서 ~-Spath~가 뭔지 궁금하다. 
+#+BEGIN_SRC shell
+$ clj -h
+...
+ -Spath         Compute classpath and echo to stdout only
+#+END_SRC
+클래스경로를 계산하고 stdout에 출력만함.
+** 의존성 추가하기
+*** Add Optional Dependency
+Aliases in the deps.edn file can also be used to add optional dependencies that affect the classpath:
+#+BEGIN_SRC clojure
+{:aliases
+ {:bench {:extra-deps {criterium/criterium {:mvn/version "0.4.4"}}}}}
+#+END_SRC
+Here the :bench alias is used to add an extra dependency, namely the criterium benchmarking library.
+`:bench` 알리아스는 추가 의존성을 위해 사용하는 것.
+You can add this dependency to your classpath by adding the :bench alias to modify the dependency resolution: clj -A:bench.
+이 의존성을 추가하려면 `:bench`를 실행할 때 추가하면 된다. `clj -A:bench`
+여기서 A는 Alias를 말하나보다.
+** deps.edn
+기본적으로 `:deps`, `:paths`, `:aliases` 등을 이용함.
+`~/.cojure/deps.edn`으로 글로벌로 적용시킬 수 있음.
+`/usr/local/lib/clojure/deps.edn`으로 리눅스 시스템에 설정을 추가할 수도 있음.
+*** :paths 
+소스 디펙토리가 있는 곳
+*** :deps
+#+BEGIN_SRC clojure
+:deps {
+  org.clojure/clojure {:mvn/version "1.10.1"}}
+#+END_SRC
+디펜던시 정의. 앱을 개발할 때, 사용함.
+*** :alias
+#+BEGIN_SRC clojure
+:aliases {
+  :deps {:extra-deps {org.clojure/tools.deps.alpha {:mvn/version "0.6.496"}}}
+  :test {:extra-paths ["test]}
+#+END_SRC
+알리아스 안에 `:deps`외에 `extra-deps`라는 것이 보인다.
+these are our libraries we use for building the application and managing
+the application but aren't part of the application itself
+
+so in this case we're using tools `:deps` 
+we might include some testing frameworks.
+
+이런식으로 알리아스에 뭔가 더 넣을 수 있다.
+여기에다 넣으면 애플리케이션을 만드는 데에는 필요하지만 애플리케이션 자체는 아닌 
+디펜던시가 추가된다.
+*** :mvn/repos
+#+BEGIN_SRC clojure
+:mvn/repos {
+  "centeral" {:url "https://repo1.maven.org/maven2/"}
+  "clojars" {:url "https://repo.clojars.org/"}
+#+END_SRC
+여기에다가 리파지토리에 로컬미러나 로컬 리파지토리를 추가할 수도 있다.
+*** Example clj-time
+`what-time-is-it` 폴더에 들어있음.
+
+Declare `clj-time` as a dependency in the `deps.edn` file, so Clojure CLI tools can downloaded the
+library and add it to the classpath.
+~deps.edn~에 파일을 추가한다.
+#+BEGIN_SRC clojure
+{:deps
+ {clj-time {:mvn/version "0.15.1"}}}
+#+END_SRC
+이후 `clj`를 터미널에서 실행하면 의존성이 추가됨.
+그리고 코드를 하나 만들어보자. 
+
+~src/hello.clj~
+#+BEGIN_SRC clojure
+(ns hello
+ (:require [clj-time.core :as t]
+           [clj-time.format :as f]))
+		   
+(defn time-str
+ "Returns a string representation of a datetime in the local time zone."
+ [dt]
+ (f/unparse
+   (f/with-zone (f/formatter "hh:mm aa") (t/default-time-zone))
+   dt))
+
+(defn -main []
+  (println "Hello world, the time is" (time-str (t/now))))
+#+END_SRC
+만들었으면 실행을 해봐야 겠지.
+#+BEGIN_SRC shell
+$ ls
+src deps.edn
+
+$ clj -m hello
+WARNING: When invoking clojure.main, use -M
+Hello world, the time is 09:02 오후
+#+END_SRC
+`-m` 은 main namespace를 지정하는 것임.
+** Using libraries from other places
+- Using local libraries
+- Using git libraries
+** rebel readline 
+*** 설명
+ Rebel readline enhances the REPL experience by providing multi-line editing with auto-indenting,
+ language completions, syntax highlighting and function argument hints as you code.
+ Rebel readline으로 좀 더 쉽게 repl을 사용할 수 있음. doc도 보여주고, 자동완성도 하게 해줌.
+*** 바로 해보기
+[[https://github.com/bhauman/rebel-readline]]
+아래처럼 바로 실행해도 됨
+#+BEGIN_SRC shell
+clojure -Sdeps "{:deps {com.bhauman/rebel-readline {:mvn/version \"0.1.4\"}}}" -m rebel-readline.main
+#+END_SRC
+*** 설정에 추가해서 사용하기
+~$HOME/.clojure/deps.edn~ 여기다가 작성하면 됨.
+#+BEGIN_SRC clojure
+{
+ :aliases {:rebel {:extra-deps {com.bhauman/reel-readline {:mvn/version "0.1.4"}}
+                   :main-opts ["-m" "rebel-readline.main"]}}
+}
+#+END_SRC
+그리고 아래처럼 실행할 수 있다.
+#+BEGIN_SRC shell
+$ clojure -A:rebel
+#+END_SRC
+
+** clj-new
+*** Link
+[[https://github.com/seancorfield/clj-new][github-link]]
+*** 의존성 추가
+#+BEGIN_SRC shell
+~/.clojure/deps.edn
+#+END_SRC
+위 패스 안에 seancorfield/clj-new 툴을 추가할 것이다.
+#+BEGIN_SRC clojure
+{:aliases {:new {:extra-deps {seancorfield/clj-new
+                              {:mvn/version "1.1.228"}}
+                 :ns-default clj-new
+               ;;:main-opts ["-m" "clj-new.create"]
+                 :exec-args {:template "app"}}  
+
+           :rebel {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
+                   :main-opts ["-m" "rebel-readline.main"]}}}
+#+END_SRC
+강의와는 다르지만 github에 있는 예제를 사용했으니 더 나을 것이다.
+강의에서는 ~:main-opts~ 가 있었지만 이젠 사라진건지 없다.
+
+*** 실행 템플릿 
+- ~app~ : A minimal Hello World! application with ~deps.edn~. Can run it via ~clj -M -m~ and can test it with ~clj -M:test:runner~.
+- ~lib~ : A minimal library with ~deps.edn~. Can test it with ~clj -M:test:runner~.
+- ~template~ : A minimal ~clj-new~ template.
+*** 실행
+#+BEGIN_SRC shell
+$ clojure -X:new create :name myname/myapp
+Generating a project called myapp based on the 'app' template.
+
+$ cd myapp/
+ls
+CHANGELOG.md	LICENSE		README.md	deps.edn	doc		pom.xml		resources	src		test
+
+$ clojure -M -m myname.myapp
+Hello, World!
+
+$ clojure -M:test:runner
+clojure -M:test:runner
+Cloning: https://github.com/cognitect-labs/test-runner
+Downloading: org/clojure/test.check/1.0.0/test.check-1.0.0.pom from central
+Checking out: https://github.com/cognitect-labs/test-runner at b6b3193fcc42659d7e46ecd1884a228993441182
+Downloading: org/clojure/tools.cli/0.3.5/tools.cli-0.3.5.pom from central
+Downloading: org/clojure/test.check/1.0.0/test.check-1.0.0.jar from central
+Downloading: org/clojure/tools.cli/0.3.5/tools.cli-0.3.5.jar from central
+
+Running tests in #{"test"}
+
+Testing myname.myapp-test
+
+FAIL in (a-test) (myapp_test.clj:7)
+FIXME, I fail.
+expected: (= 0 1)
+  actual: (not (= 0 1))
+
+Ran 1 tests containing 1 assertions.
+1 failures, 0 errors.
+#+END_SRC
+~pom.xml~ 이 있다는게 좀 신기함.
+
+*** 템플릿으로 만들어진 deps.edn파일 살펴보기
+#+BEGIN_SRC shell
+$ less deps.edn
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure {:mvn/version "1.10.1"}}
+ :aliases
+ {:test {:extra-paths ["test"]
+         :extra-deps {org.clojure/test.check {:mvn/version "1.0.0"}}}
+  :runner
+  {:extra-deps {com.cognitect/test-runner
+                {:git/url "https://github.com/cognitect-labs/test-runner"
+                 :sha "b6b3193fcc42659d7e46ecd1884a228993441182"}}
+   :main-opts ["-m" "cognitect.test-runner"
+               "-d" "test"]}
+  :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.128"}}
+            :main-opts ["-m" "hf.depstar.uberjar" "myapp.jar"
+                        "-C" "-m" "myname.myapp"]}}}
+#+END_SRC
+- ~:paths~ : resources, src 패스에 코드가 있다고 설정.
+- ~:aliases~
+  + ~:test~ : 테스트 알리아스를 추가함. 유닛테스트를 할 수 있음.
+  + ~:get/url~ : 여기서 ~:sha~ 는 특정 커밋을 설정해서 가져오는 것이다. 그렇게 해서 안전하게 쓰려는 듯.
+- ~seancorfield/depstar~ : uberjar 만들기 쉽게 만드는 듯.
+
+*** 소스코드를 보자
+~myapp.clj~
+#+BEGIN_SRC clojure
+(ns myname.myapp
+  (:gen-class))
+
+(defn -main
+  "I don't do a whole lot ... yet."
+  [& args]
+  (println "Hello, World!"))
+#+END_SRC
+
+
+*** figwheel.main template
+[[https://github.com/bhauman/figwheel-main-template][github-link]]
+#+BEGIN_SRC shell
+clj -A:new figwheel-main hello-world.core -- --reagent # or --rum, --om, --react or nothing
+#+END_SRC
+위 코드로는 안되고, clj-new 깃헙사이트에 다른 게 있다.
+#+BEGIN_SRC shell
+clojure -X:new create :template figwheel-main :name hello-figwheel.core
+Generating fresh figwheel-main project.
+  To get started:
+  -->  Change into the 'hello-figwheel.core' directory
+  -->  Start build with 'clojure -A:fig:build'
+#+END_SRC
+뭐 만들어지는 것을 볼 수 있다.
+

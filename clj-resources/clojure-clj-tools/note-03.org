@@ -1,0 +1,214 @@
+* A Deeper Understanding of Clojure CLI Tools
+[[http://jr0cket.co.uk/2019/07/a-deeper-understanding-of-Clojure-CLI-tools.html][Link]]
+
+** 개요
+CLI tools make Clojure very accessible and simple to install as they are
+a essentially a wrapper for running Clojure code using the ~java~ command
+
+and use additional libraries to manage dependencies, class paths, create projects
+and java archive (jar) files.
+
+Its quite common to use the ~java~ command to run your code in production,
+usually defined in a shell script.
+
+Leiningen can be used to run your application in production too, however,
+becauses Leiningen creates 2 JVM instanes (one for itself and one for the application),
+its more efficient to just use the ~java~ command.
+
+Leiningen does provides a very rich set of templates that speed up development
+with Clojure and has a multitude of plugins.
+
+Plugins provide a rich source of features but they are not very composable,
+especially compared to the Clojure language itself.
+
+Clojure CLI tools provide a minimal but elegant layer on top of the ~java~ command
+and enables libraries, configuration and code to compose together just like Clojure functions.
+
+So we will continuing the exploration of Clojure CLI tools and dig a little deeper
+under the covers to understand how they work and how to configure projects to be very
+flexible, especially the different sources of code you can use.
+
+** Under the covers of Clojure CLI
+
+*** lein new app classic
+~lein new app classic~ 명령어는 소스코드와 테스트코드를 담은 심플 프로젝트 생성.
+*** lein repl
+해당 프로젝트에 repl이 실행됨
+*** lein jar , lein uberjar
+패키징하기 위해 사용됨.
+These commands compile the Clojure code into classes when Ahead Of Time compilation is used.
+AOT 컴파일을 할 때 사용됨.
+
+Any namespaces with ~(:gen-class)~ directive included in compiled 
+into a JVM bytecode class is ~lein uberjar~ creates a single file 
+that contains our application and the Clojure library, 
+so we can use with the java command line
+
+#+BEGIN_SRC shell
+java -cp target/myproject-standalone.jar
+#+END_SRC
+
+If I had created a library project, with ~lein new classic~
+만약 내가 ~lein new classic~ 으로 라이브러리 프로젝트를 만들었다면,
+, then I would need to specify ~clojure.main~
+그러면 나는 ~clojure.main~ 을 특정해야 한다.
+and the main class for the ~java~ command to work correctly.
+그리고 자바 명령어가 제대로 작동하도록 메인클래스도 특정해야 한다.
+
+#+BEGIN_SRC shell
+java -cp target/myproject-standalone.jar clojure.main -m classic.core
+#+END_SRC
+
+It is also possible to run the compiled source code, 
+컴파일된 소스코드를 실행하는 것도 가능하다.
+however, we will also need to add Clojure as a dependency.
+하지만 Clojure를 의존성으로 추가해야 한다.
+There is a copy of the Clojure library in my maven cache from 
+previous projects I have worked on.
+메이븐에 캐시되어 있는 파일을 이용해서 실행해보자.
+#+BEGIN_SRC shell
+java -cp target/uberjar/classes/:/home/jr0cket/.m2/repository/org/clojure/clojure/1.8.0/clojure-1.8.0.jar classic.core
+#+END_SRC
+
+If i just wanted to run a repl, I can call ~clojure.main~ as my namespace
+그냥 REPL을 원하면 ~clojure.main~ 을 호출하면 된다.
+#+BEGIN_SRC shell
+java -cp /home/jr0cket/.m2/repository/org/clojure/clojure/1.8.0/clojure-1.8.0.jar clojure.main
+#+END_SRC
+
+Already there are a few things to remember. 
+여기에서 우리가 기억해야 할 것이 있따.
+As your project gets bigger 
+프로젝트가 커지면
+then the command you use will get bigger and harder to manage safely, 
+우리가 사용하는 명령어는 커지고 관리하기 힘들어진다.
+its often put into scripts 
+but then there is no real validation that you got the script right, 
+without some manual testing
+테스트를 안하면 이젠 유효성을 확인하기 힘듬.
+#+BEGIN_SRC 
+java $JVM_OPTS -cp target/todo-list.jar clojure.main -m todo-list.core $PORT
+#+END_SRC
+** Clojure CLI tools
+It is very easy to create a project for CLI tools,
+CLI tools를 이용하면 프로젝트를 생성하기 쉬움.
+using the clojure command or the clj wrapper for that command
+clojure 명령어나 이 커맨드를 래핑한 clj를 사용하면 됨.
+which will use a readline to improve the command line experience.
+clj는 clojure 래퍼인데 readline을 사용해서 커맨드라인 경험을 향상시켜줌.
+
+CLI tools project only requires a deps.edn file, 
+오로지 deps.edn 파일만 있으면 된다.
+a default file comes with the CLI tools install.
+
+~~/.clojure/depsedn~ 맨처음에 생성된다. (처음으로 ~clojure~ 명령어를 실행할 때)
+
+~/usr/local/lib/clojure/deps.edn~ 는 모든 프로젝트에 적용되는 기본적인 옵션이 저장됨.
+
+src is set as the relative path to the source code
+~src~ 는 소스코드의 상대경로로 설정됨.
+The dependencies include 1.10.1 version of the Clojure library.
+의존성에 1.10.1 버전의 Clojure 라이브러리가 포함됨.
+
+Aliases define additional libraries 
+aliases는 추가적인 라이브러리를 정의한다.
+that will only be included during development, 
+이 추가적인 라이브러리는 개발 중에만 추가된다.
+in this case org.clojure/tools.deps.alpha 
+아래 예시의 경우 ~org.clojure/tools.deps.alpha~ 는
+which is used to find and download project dependencies 
+프로젝트 의존성을 찾고 다운로드 하고 
+and build a classpath for the project.
+프로젝트의 클래스패스를 빌드하는데 사용한다.
+
+Finally maven central and clojars are the repositories
+마지막으로 메이븐 센트럴와 clojars 는 저장소이다.
+where dependencies are downloaded from.
+의존성과 다운로드를 하는 곳이다.
+
+#+BEGIN_SRC clojure
+{
+  :paths ["src"]
+  :deps {
+    org.clojure/clojure {:mvn/version "1.10.1"}
+  }
+  :aliases {
+    :deps {:extra-deps {org.clojure/tools.deps.alpha {:mvn/version "0.6.496"}}}
+    :test {:extra-paths ["test"]}
+  }
+  :mvn/repos {
+    "central" {:url "https://repo1.maven.org/maven2/"}
+    "clojars" {:url "https://repo.clojars.org/"}
+  }
+}
+#+END_SRC
+
+** A sipmle porject configuration
+#+BEGIN_SRC clojure
+{:paths ["src"]
+ :deps
+ {org.clojure/clojure {:mvn/version "1.10.1"}}
+ :aliases
+ {:test {:extra-paths ["test"]
+         :extra-deps {com.cognitect/test-runner
+                       {:git/url "https://github.com/cognitect-labs/test-runner.git"
+                        :sha "cb96e80f6f3d3b307c59cbeb49bb0dcb3a2a780b"}}
+         :main-opts ["-m" "cognitect.test-runner"]}}}
+#+END_SRC
+The cognitect-labs/test-runner is a recent project 
+cognitect-labs/test-runner는 최근에 만들어진 프로젝트다.
+so we are including this directly from its GitHub repository. We use the latest commit
+해서 우리는 깃헙 저장소에서 직접 가져온다.
+:sha 는 커밋번호를 말한다.
+
+Using the Git commit removes the need to create a Jar file from the source code.
+Git 커밋을 사용하면 소스코드에서 Jar파일을 만들 필요가 없다.
+
+** Time for some Test Driven Development
+Create a new file in the ~test~ directory called ~core_test.clj~ 
+that contains a test with two assertions.
+test 디렉토리에 ~core_test.clj~ 파일을 만들고 테스트코드를 작성해보자.
+
+#+BEGIN_SRC clojure
+(ns simple.core-test
+  (:require [simple.core :as sut]
+            [clojure.test :refer [deftest testing is]]))
+(deftest core-tests
+  (testing "The correct welcome message is returned"
+    (is (= (sut/-main)
+           "Hello World!"))
+    (is (= (sut/-main "Welcome to the Clojure CLI")
+           "Hello World! Welcome to the Clojure CLI"))))
+#+END_SRC
+
+We run the failing tests with the following command
+우리는 이 실패하는 테스트를 아래의 명령어로 실행할 수 있다.
+#+BEGIN_SRC shell
+clj -A:test
+Checking out: https://github.com/cognitect-labs/test-runner.git at cb96e80f6f3d3b307c59cbeb49bb0dcb3a2a780b
+Running tests in #{"test"}
+Syntax error compiling at (simple/core_test.clj:8:26).
+No such var: sut/-main
+Full report at:
+/tmp/clojure-3370388766424088668.edn
+#+END_SRC
+
+You can see that the first time we are using the test-runner the CLI tools 
+download the source code from the Git repository.
+우리는 깃헙 저장소에서 소스코드를 다운로드 하는 것이 먼저 보일 것이다.
+test-runner를 가져오는 중이다.
+
+** And now some code
+Everything is working correctly and the tests are failing
+모든 것이 잘 작동하고 테스트는 실패한다.
+because we have not written the code that the test is using.
+아직 테스트가 사용하는 코드를 만들지도 않았기 때문이다.
+So write the application code and make the test pass and execute the test runner again.
+해서 코드르르 만들고 테스트를 패스해보자.
+
+#+BEGIN_SRC clojure
+(ns hello.core)
+(defn -main []
+  (println "Hello world!"))
+#+END_SRC
+
