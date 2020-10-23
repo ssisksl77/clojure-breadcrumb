@@ -1,0 +1,11 @@
+* Lambda Calculus in Clojure
+
+** 람다 만들기
+람다라는 함수를 만들어 보자.
+#+BEGIN_SRC clojure
+(defmacro L
+  [args & body]
+  `(fn [~args] ~@body))
+#+END_SRC
+
+** 
