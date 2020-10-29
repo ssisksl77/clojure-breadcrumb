@@ -78,11 +78,10 @@
 #_(resolve '+) ;; => #'clojure.core/+
 ;; 이 resolve로 우리가 핸들링하지 않은 것들을 사용할 수 있을 것 같다.
 ;; 함수를 파싱하자.
-(parse-item '(+ 2 4) (atom 0)) ;; => {:type :call, :fn {:type :symbol, :value +}, :args ({:type :int, :value 2} {:type :int, :value 4})}
+;;(parse-item '(+ 2 4) (atom 0)) ;; => {:type :call, :fn {:type :symbol, :value +}, :args ({:type :int, :value 2} {:type :int, :value 4})}
 
-(parse-item '((comp pos? +) 2 3) (atom 0))
-#_{:type :call, :fn {:type :call, :fn {:type :symbol, :value comp}, :args ({:type :symbol, :value pos?} {:type :symbol\
-, :value +})}, :args ({:type :int, :value 2} {:type :int, :value 3})}
+;;(parse-item '((comp pos? +) 2 3) (atom 0))
+;;{:type :call, :fn {:type :call, :fn {:type :symbol, :value comp}, :args ({:type :symbol, :value pos?} {:type :symbol\, :value +})}, :args ({:type :int, :value 2} {:type :int, :value 3})}
 
 ;; 와 이런거로... 코드를 파싱해서 맘대로 가지고 놀 수 있다.
 ;; 다른 것도 해보자.
@@ -91,7 +90,7 @@
   (parse-item form (atom 0)))
 
 #_(to-ast (+ 1 2))
-#_{:type :call, :fn {:type :symbol, :value #function[clojure.core/+]}, :args nil}
+;; {:type :call, :fn {:type :symbol, :value #function[clojure.core/+]}, :args nil}
 
 #_(to-ast (when x (if (< y 100) y-less y-greater)))
 ;; Unable to resolve symbol: x in this context
@@ -120,9 +119,7 @@
   (pr-str (parse-item form (atom 0))))
 
 (macroexpand '(to-ast (when x (if (< y 100) y-less y-greater))))
-#_"{:type :if, :test {:type :symbol, :value x}, :then {:type :do, :body ({:type :if, :test {:type :call, :fn {:type :s\
-ymbol, :value <}, :args ({:type :symbol, :value y} {:type :int, :value 100})}, :then {:type :symbol, :value y-less}, :e\
-lse {:type :symbol, :value y-greater}})}, :else {:type :nil}}"
+
 
 ;; what the `go` macro does and we'll look at this later in our next video.
 ;; where the `go` macro does is does something pretty close to this
