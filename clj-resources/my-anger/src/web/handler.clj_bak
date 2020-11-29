@@ -1,0 +1,91 @@
+(ns web.handler
+  (:require [reitit.core :as r]
+            [reitit.ring :as ring]
+            [reitit.coercion.spec]
+            [reitit.ring.coercion :as rrc]
+            [reitit.middleware :as middleware]
+            [clojure.set :as set]
+            [web.main-page :as main-page]
+            [web.admin :as admin]))
+
+(defn wrap [handler id]
+  (fn [request]
+    (handler (update request ::acc (fnil conj []) id))))
+
+;; dynamic extension 근데 이것보단 아래처럼(wrap2, wrap3) data-driven을 쓰던가. compile을 하라.
+(defn wrap-enforce-roles [handler]
+  (fn [{:keys [my-roles] :as request}]
+    (let [required (some-> request (ring/get-match) :data ::roles)]
+      (if (and (seq required) (not (set/subset? required my-roles)))
+        {:status 403, :body "forbidden"}
+        (handler request)))))
+
+
+;; middleware 를 데이터로 가지는것이 좋다.
+(def wrap3
+  {:name ::wrap3
+   :description "Middleware that does things."
+   :wrap wrap})
+
+;; middleware 값은 Middleware record를 구현하여 사용할 수도 있음.
+(def wrap2
+  (middleware/map->Middleware
+    {:name ::wrap2
+     :description "Middleware that does things."
+     :wrap wrap}))
+
+
+(defn handler [{::keys [acc]}]
+  {:status 200, :body (conj acc :handler)})
+
+(def app
+  (ring/ring-handler
+   (ring/router
+    ["/api" {:middleware [[wrap3 :api]]}
+     main-page/route-data
+     admin/route-data])
+   (ring/routes
+     (ring/redirect-trailing-slash-handler)
+     (ring/create-default-handler
+      {:not-found (constantly {:status 404 :body "Not Found"})
+       :method-not-allowed (constantly {:status 405 :body "Method Not Allowed"})
+       :not-accepted (constantly {:status 406 :body "Not Accepted"})}))))
+
+#_(def app
+  (ring/ring-handler
+   (ring/router
+      ;; a middleware function
+    ["/api" {:middleware [[wrap 1] [wrap 2]]} ;; [[wrap api]] or [#(wrap % :api)]
+     main-page/route-data
+       ["/ping" {:get handler}]
+       ;; a middleware vector at top level
+       ]
+      {:data {:middleware [wrap-enforce-roles]}})
+    (ring/routes
+     (ring/redirect-trailing-slash-handler)
+     (ring/create-default-handler
+      {:not-found (constantly {:status 404 :body "Not found"})
+       :method-not-allowed (constantly {:status 405 :body "Method Not Allowed"})
+       :not-accepted (constantly {:status 406 :body "Not Acceptd"})}))))
+
+(app {:request-method :get, :uri "/api/ping"})
+(app {:request-method :get, :uri "/api/ping/"})
+(app {:request-method :post, :uri "/api/ping"})
+(app {:request-method :get, :uri "/api/admin/ping", :my-roles #{:admin}})
+(app {:request-method :delete, :uri "/api/admin/db"})
+(app {:request-method :delete, :uri "/api/admin/db", :my-roles #{:admin}})
+(app {:request-method :get, :uri "/api/main"})
+(comment (def app
+           (ring/ring-handler
+            (ring/router
+             ["/api"
+              ["/math" {:get {:parameters {:query {:x int?, :y int?}}
+                              :responses {200 {:body {:total pos-int?}}}
+                              :handler (fn [{{{:keys [x y]} :query} :parameters}]
+                                         {:status 200
+                                          :body {:total (+ x y)}})}}]]
+             ;; router data effecting all routes
+             {:data {:coercion reitit.coercion.spec/coercion
+                     :middleware [rrc/coerce-exceptions-middleware
+                                  rrc/coerce-request-middleware
+                                  rrc/coerce-response-middleware]}}))))
