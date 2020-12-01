@@ -2,7 +2,6 @@
   (:require [persistence.db :as db]))
 
 (defn- get-user-handler [{{{:keys [id]} :query} :parameters}]
-  
   {:status 200
    :body {:data (str "Hello " id)}})
 
@@ -14,6 +13,8 @@
 (defn- get-user-by-id-handler [{{{:keys [id]} :path} :parameters}]
   {:status 200
    :body {:data (str "save id=" id ", name=" (db/find-user id))}})
+
+
 
 (def route-data
   ["/user"
