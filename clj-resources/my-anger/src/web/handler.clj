@@ -1,6 +1,5 @@
 (ns web.handler
-  (:require [clojure.set :as set]
-            [reitit.swagger :as swagger]
+  (:require [reitit.swagger :as swagger]
             [reitit.swagger-ui :as swagger-ui]
             [reitit.core :as r]
             [reitit.coercion.spec]
