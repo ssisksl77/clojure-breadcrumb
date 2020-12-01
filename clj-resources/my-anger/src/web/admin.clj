@@ -7,5 +7,3 @@
 (def route-data
   ["/admin" {:roles #{:admin}}
    ["/db" {:delete {:handler default-handler}}]])
-
-

@@ -1,12 +1,10 @@
 (ns web.handler
   (:require [reitit.swagger :as swagger]
             [reitit.swagger-ui :as swagger-ui]
-            [reitit.core :as r]
             [reitit.coercion.spec]
             [reitit.ring :as ring]
             [reitit.ring.coercion :as rrc]
             [reitit.ring.middleware.exception :as exception]
-            [reitit.middleware :as middleware]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.middleware.parameters :as parameters]
             [reitit.dev.pretty :as pretty]
@@ -44,15 +42,17 @@
      :data {:coercion reitit.coercion.spec/coercion
             :muuntaja m/instance
             :middleware [parameters/parameters-middleware
-                         ;; content-negotiation
-                         muuntaja/format-middleware
-                         ;; exception handling
+                         muuntaja/format-negotiate-middleware
+                           ;; encoding response body
+                         muuntaja/format-response-middleware
+                           ;; exception handling
                          exception/exception-middleware
+                           ;; decoding request body
+                         muuntaja/format-request-middleware
                          ;; coercing request parameters
                          rrc/coerce-request-middleware
                          ;; coercing response bodys
-                         rrc/coerce-response-middleware
-                         ]}})
+                         rrc/coerce-response-middleware]}})
    (ring/routes
      (ring/redirect-trailing-slash-handler)
      (ring/create-default-handler
