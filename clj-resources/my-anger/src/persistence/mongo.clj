@@ -3,7 +3,6 @@
             [monger.collection :as mc]))
 ;; ref http://clojuremongodb.info/articles/getting_started.html
 
-(def uri "mongodb://test:test@127.0.0.1:27017")
 (def conn (mg/connect))
 
 (defn save-user [user]

@@ -9,7 +9,6 @@
             [reitit.ring.middleware.parameters :as parameters]
             [reitit.dev.pretty :as pretty]
             [web.main-page :as main-page]
-            [web.admin :as admin]
             [web.user :as user]
             [muuntaja.core :as m]
             [ring.adapter.jetty :as jetty]))
@@ -33,7 +32,6 @@
    (ring/router
     [["/api"
      ;;main-page/route-data
-     ;;admin/route-data
      user/route-data]
      ["" {:no-doc true}
       ["/swagger.json" {:get (swagger/create-swagger-handler)}]
