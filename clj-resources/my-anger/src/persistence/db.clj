@@ -1,9 +1,11 @@
-(ns persistence.db)
+(ns persistence.db
+  (:require [persistence.mongo :as mongo]))
 
-(def db (atom {}))
+#_(mongo/save-user {:id "001" :name "younghwan"})
+#_(mongo/find-user "001")
 
 (defn save-user [id name]
-  (swap! db assoc (keyword id) name))
+  (mongo/save-user {:id id :name name}))
 
 (defn find-user [id]
-  ((keyword id) @db))
+  (mongo/find-user id))

@@ -32,8 +32,8 @@
   (ring/ring-handler
    (ring/router
     [["/api"
-     main-page/route-data
-     admin/route-data
+     ;;main-page/route-data
+     ;;admin/route-data
      user/route-data]
      ["" {:no-doc true}
       ["/swagger.json" {:get (swagger/create-swagger-handler)}]
@@ -84,4 +84,5 @@
 
 (comment
   (defonce server (start))
-  (.stop server))
+  (.stop server)
+  )
