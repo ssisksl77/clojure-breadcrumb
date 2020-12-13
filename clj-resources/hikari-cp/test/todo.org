@@ -1,0 +1,29 @@
+
+* docker-compose 설정
+  
+docker exec -i -t <container name> bash
+
+su - postgres
+
+psql
+
+CREATE USER yhnam WITH SUPERUSER CREATEUSER LOGIN ENCRYPTED PASSWORD 'yhnam';
+
+이제 이걸로 연결가능 기본적으로 postgres로 들어가면됨.
+
+
+
+첫 세팅 방법.
+CREATE USER confluence WITH ENCRYPTED PASSWORD 'secret123';
+
+postgres=# CREATE DATABASE jiradb OWNER jira ENCODING 'utf-8';
+postgres=# CREATE DATABASE confluencedb OWNER confluence ENCODING 'utf-8';
+postgres=# CREATE DATABASE bamboodb OWNER bamboo ENCODING 'utf-8';
+postgres=# CREATE DATABASE bitbucketdb OWNER bitbucket ENCODING 'utf-8';
+
+Creating Role 생성Link to Creating Role 생성
+postgres=#  ALTER ROLE jira WITH PASSWORD 'password' ;
+postgres=# ALTER ROLE confluence WITH PASSWORD 'password'
+postgres=# ALTER ROLE bitbucket WITH PASSWORD 'password';
+postgres=# ALTER ROLE bamboo WITH PASSWORD 'password';
+https://www.lesstif.com/dbms/postgresql-61899197.html
